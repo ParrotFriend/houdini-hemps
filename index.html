@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Houdini Hemps — Available Products</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1C1A15;--surface:#252218;--surface2:#2E2B1F;--border:#3D3826;
+  --text:#F0E8D0;--muted:#8C7F60;--accent:#7A9E4A;--accent-dk:#5A7A3A;--accent-lt:#2A3A1A;
+  --radius:12px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── NAV ── */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-brand span{font-size:16px;font-weight:700;color:var(--accent);}
+.nav-logo{width:34px;height:34px;background:var(--accent-lt);border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.nav-login{font-size:13px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:var(--radius);padding:6px 14px;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.nav-login:hover{color:var(--accent);border-color:var(--accent);}
+
+/* ── HERO ── */
+.hero{padding:3rem 1.5rem 2rem;text-align:center;max-width:600px;margin:0 auto;}
+.hero-tag{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);background:var(--accent-lt);border:1px solid var(--accent);border-radius:20px;padding:4px 14px;margin-bottom:1rem;}
+.hero h1{font-size:32px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1.2;margin-bottom:0.75rem;}
+.hero p{font-size:15px;color:var(--muted);line-height:1.6;}
+
+/* ── SEARCH ── */
+.search-wrap{padding:0 1.5rem 1.5rem;max-width:560px;margin:0 auto;width:100%;}
+.search-input{width:100%;padding:11px 16px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;transition:border-color 0.15s;}
+.search-input::placeholder{color:var(--muted);}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(122,158,74,0.1);}
+
+/* ── GRID ── */
+.products-section{flex:1;padding:0 1.5rem 3rem;max-width:1100px;width:100%;margin:0 auto;}
+.products-count{font-size:13px;color:var(--muted);margin-bottom:1rem;}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+
+/* ── PRODUCT CARD ── */
+.product-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:border-color 0.15s,transform 0.15s;}
+.product-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.product-img{height:140px;background:var(--accent-lt);display:flex;align-items:center;justify-content:center;font-size:52px;border-bottom:1px solid var(--border);}
+.product-body{padding:1rem;}
+.product-name{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.product-weight{font-size:12px;color:var(--muted);margin-bottom:10px;}
+.product-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+.product-price{font-size:18px;font-weight:700;color:var(--accent);}
+.stock-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.stock-badge.available{background:rgba(39,174,96,0.12);color:#5DCC8A;}
+.stock-badge.low{background:rgba(230,126,34,0.12);color:#F0A050;}
+.stock-badge.out{background:rgba(192,57,43,0.12);color:#E07060;}
+
+/* ── EMPTY / LOADING ── */
+.state-center{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 1rem;gap:12px;color:var(--muted);text-align:center;}
+.state-center .icon{font-size:40px;margin-bottom:4px;}
+.state-center p{font-size:14px;}
+.spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── FOOTER ── */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:1.25rem 1.5rem;text-align:center;}
+footer p{font-size:12px;color:var(--muted);}
+.loyalty-cta{display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:8px 20px;background:var(--accent-lt);border:1px solid var(--accent);border-radius:var(--radius);color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;transition:background 0.15s;}
+.loyalty-cta:hover{background:rgba(122,158,74,0.2);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🌿</div>
+    <span>Houdini Hemps</span>
+  </div>
+  <a class="nav-login" href="customer-login.html">My Loyalty Card →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">Available Now</div>
+  <h1>Our Products</h1>
+  <p>Fresh picks from Houdini Hemps. No account needed — just browse!</p>
+</div>
+
+<div class="search-wrap">
+  <input class="search-input" type="search" id="search" placeholder="Search products..." oninput="filterProducts()"/>
+</div>
+
+<div class="products-section">
+  <div id="products-count" class="products-count"></div>
+  <div id="products-container"></div>
+</div>
+
+<footer>
+  <p>Want to earn points on every purchase?</p>
+  <a class="loyalty-cta" href="customer-login.html">🌿 Join our Loyalty Program</a>
+</footer>
+
+<script>
+  const SUPABASE_URL = 'https://gzlervyhpbomdwpfxmes.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6bGVydnlocGJvbWR3cGZ4bWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTg3MjQsImV4cCI6MjA5NzY3NDcyNH0.Pb17-wvn_jbbuhzNUWKmP2_AOLVytJotxVexq4KTfmc';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let allProducts = [];
+
+  function getEmoji(name) {
+    const n = name.toLowerCase();
+    if (n.includes('oil'))    return '🫙';
+    if (n.includes('hemp'))   return '🌿';
+    if (n.includes('cbd'))    return '💧';
+    if (n.includes('flower')) return '🌸';
+    if (n.includes('edible') || n.includes('gummy')) return '🍬';
+    if (n.includes('vape') || n.includes('cart'))    return '💨';
+    if (n.includes('cream') || n.includes('balm'))   return '🧴';
+    if (n.includes('tea'))    return '🍵';
+    if (n.includes('capsule') || n.includes('pill')) return '💊';
+    return '🌱';
+  }
+
+  function stockInfo(qty) {
+    if (qty <= 0)  return { label: 'Out of stock', cls: 'out' };
+    if (qty <= 5)  return { label: `Only ${qty} left!`, cls: 'low' };
+    return { label: 'Available', cls: 'available' };
+  }
+
+  function renderProducts(products) {
+    const container = document.getElementById('products-container');
+    const countEl   = document.getElementById('products-count');
+
+    if (!products.length) {
+      container.innerHTML = `
+        <div class="state-center">
+          <div class="icon">🔍</div>
+          <p>No products found.<br>Try a different search.</p>
+        </div>`;
+      countEl.textContent = '';
+      return;
+    }
+
+    const available = products.filter(p => p.quantity > 0);
+    countEl.textContent = `${available.length} product${available.length !== 1 ? 's' : ''} available`;
+
+    container.innerHTML = `<div class="products-grid">${
+      products.map(p => {
+        const stock = stockInfo(p.quantity);
+        const price = '₱' + Number(p.price).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2});
+        return `
+          <div class="product-card" style="${p.quantity === 0 ? 'opacity:0.5;' : ''}">
+            <div class="product-img">${getEmoji(p.name)}</div>
+            <div class="product-body">
+              <div class="product-name">${p.name}</div>
+              ${p.weight ? `<div class="product-weight">${p.weight}</div>` : ''}
+              <div class="product-footer">
+                <div class="product-price">${price}</div>
+                <span class="stock-badge ${stock.cls}">${stock.label}</span>
+              </div>
+            </div>
+          </div>`;
+      }).join('')
+    }</div>`;
+  }
+
+  function filterProducts() {
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    if (!q) { renderProducts(allProducts); return; }
+    const filtered = allProducts.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.weight && p.weight.toLowerCase().includes(q))
+    );
+    renderProducts(filtered);
+  }
+
+  async function loadProducts() {
+    document.getElementById('products-container').innerHTML = `
+      <div class="state-center"><div class="spinner"></div><p>Loading products...</p></div>`;
+
+    const { data, error } = await db
+      .from('products')
+      .select('id, name, price, quantity, weight')
+      .order('name');
+
+    if (error || !data) {
+      document.getElementById('products-container').innerHTML = `
+        <div class="state-center">
+          <div class="icon">⚠️</div>
+          <p>Could not load products.<br>Please try again later.</p>
+        </div>`;
+      return;
+    }
+
+    // Show in-stock first, then out-of-stock
+    allProducts = [
+      ...data.filter(p => p.quantity > 0),
+      ...data.filter(p => p.quantity === 0),
+    ];
+    renderProducts(allProducts);
+  }
+
+  loadProducts();
+</script>
+</body>
+</html>

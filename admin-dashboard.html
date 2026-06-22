@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Houdini Hemps — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1C1A15;--surface:#252218;--surface2:#2E2B1F;--border:#3D3826;
+  --text:#F0E8D0;--muted:#8C7F60;--accent:#7A9E4A;--accent-dk:#5A7A3A;--accent-lt:#2A3A1A;
+  --danger:#C0392B;--danger-lt:rgba(192,57,43,0.15);
+  --success:#27AE60;--success-lt:rgba(39,174,96,0.12);
+  --warning:#E67E22;--warning-lt:rgba(230,126,34,0.12);
+  --info:#2980B9;--info-lt:rgba(41,128,185,0.12);
+  --radius:8px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;}
+.nav-brand{font-weight:700;font-size:15px;color:var(--accent);margin-right:2rem;white-space:nowrap;}
+.nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto;}
+.nav-tab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:transparent;cursor:pointer;border-radius:var(--radius);white-space:nowrap;transition:all 0.15s;}
+.nav-tab:hover{color:var(--text);background:var(--surface2);}
+.nav-tab.active{color:var(--accent);background:var(--accent-lt);}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.logout-btn{font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;cursor:pointer;}
+.logout-btn:hover{color:#E07060;border-color:#E07060;}
+
+main{flex:1;padding:1.5rem;max-width:1200px;width:100%;margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.card-title{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:1rem;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.stat-value{font-size:24px;font-weight:700;color:var(--text);}
+.stat-value.green{color:var(--accent);}
+.stat-value.red{color:#E07060;}
+.stat-value.yellow{color:var(--warning);}
+
+.form-row{display:grid;gap:12px;margin-bottom:12px;}
+.form-row.cols-2{grid-template-columns:1fr 1fr;}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.form-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted);}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);}
+.form-group select option{background:var(--surface);}
+
+.btn{padding:8px 18px;font-size:13px;font-weight:600;border:none;border-radius:var(--radius);cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn:active{transform:scale(0.97);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dk);}
+.btn-danger{background:var(--danger-lt);color:#E07060;border:1px solid rgba(192,57,43,0.3);}
+.btn-danger:hover{background:rgba(192,57,43,0.25);}
+.btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+
+.table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{background:var(--surface2);color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:10px 14px;color:var(--text);}
+.td-muted{color:var(--muted);}
+.empty-row td{text-align:center;color:var(--muted);padding:2rem;font-size:13px;}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:var(--success-lt);color:#5DCC8A;}
+.badge-red{background:var(--danger-lt);color:#E07060;}
+.badge-yellow{background:var(--warning-lt);color:#F0A050;}
+.badge-blue{background:var(--info-lt);color:#60A8E0;}
+.badge-gray{background:rgba(255,255,255,0.06);color:var(--muted);}
+
+.fin-tabs{display:flex;gap:4px;margin-bottom:1.25rem;background:var(--surface2);padding:4px;border-radius:var(--radius);width:fit-content;}
+.fin-tab{padding:7px 16px;font-size:13px;font-weight:500;color:var(--muted);border:none;background:transparent;cursor:pointer;border-radius:6px;transition:all 0.15s;}
+.fin-tab.active{background:var(--accent);color:#fff;}
+
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.section-header h2{font-size:16px;font-weight:600;}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none;z-index:999;}
+#toast.show{opacity:1;transform:translateY(0);}
+#toast.error{background:var(--danger);}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;width:100%;max-width:420px;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.modal-header h3{font-size:15px;font-weight:600;}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;}
+
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">🌿 Houdini Hemps</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('inventory', this)">📦 Inventory</button>
+    <button class="nav-tab" onclick="switchTab('finance', this)">💰 Finance</button>
+    <button class="nav-tab" onclick="switchTab('customers', this)">👥 Customers</button>
+  </div>
+  <div class="nav-right">
+    <span style="font-size:12px;color:var(--muted)" id="admin-name"></span>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- INVENTORY -->
+<div id="tab-inventory" class="tab-panel active">
+  <div class="section-header">
+    <h2>Inventory</h2>
+    <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+  </div>
+  <div class="stats-grid" id="inv-stats"></div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product Name</th><th>Price (₱)</th><th>Quantity</th><th>Weight</th><th>Actions</th></tr></thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- FINANCE -->
+<div id="tab-finance" class="tab-panel">
+  <h2 style="margin-bottom:1rem;">Finance</h2>
+  <div class="fin-tabs">
+    <button class="fin-tab active" onclick="switchFinTab('sales', this)">Sales & Expenses</button>
+    <button class="fin-tab" onclick="switchFinTab('orders', this)">Orders</button>
+    <button class="fin-tab" onclick="switchFinTab('accounts', this)">Accounts</button>
+    <button class="fin-tab" onclick="switchFinTab('transfer', this)">Transfer</button>
+  </div>
+
+  <!-- SALES -->
+  <div id="fin-sales" class="fin-panel">
+    <div class="stats-grid" id="fin-stats"></div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Record Transaction</div>
+      <div class="form-row cols-4">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="txn-type"><option value="sales">Sales</option><option value="expense">Expense</option></select>
+        </div>
+        <div class="form-group">
+          <label>Amount (₱)</label>
+          <input type="number" id="txn-amount" placeholder="0.00" min="0"/>
+        </div>
+        <div class="form-group">
+          <label>Account</label>
+          <select id="txn-account"></select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="txn-desc" placeholder="e.g. 5g pack"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="txn-btn" onclick="recordTransaction()">Record</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Transaction History</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date & Time</th><th>Type</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead>
+        <tbody id="txn-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div id="fin-orders" class="fin-panel" style="display:none;">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Add Order</div>
+      <div class="form-row cols-3">
+        <div class="form-group"><label>Date</label><input type="date" id="ord-date"/></div>
+        <div class="form-group"><label>Tracking Number</label><input type="text" id="ord-tracking" placeholder="e.g. JT12345678"/></div>
+        <div class="form-group"><label>Status</label>
+          <select id="ord-status">
+            <option value="pending">Pending</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>Description</label><input type="text" id="ord-desc" placeholder="What was ordered?"/></div>
+        <div class="form-group"><label>Amount (₱)</label><input type="number" id="ord-amount" placeholder="0.00" min="0"/></div>
+      </div>
+      <button class="btn btn-primary" id="ord-btn" onclick="addOrder()">Add Order</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Order History</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Tracking #</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="ord-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div id="fin-accounts" class="fin-panel" style="display:none;">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Add Account</div>
+      <div class="form-row cols-3">
+        <div class="form-group"><label>Account Name</label><input type="text" id="acc-name" placeholder="e.g. GCash, Cash"/></div>
+        <div class="form-group"><label>Initial Balance (₱)</label><input type="number" id="acc-balance" placeholder="0.00" min="0"/></div>
+        <div class="form-group" style="display:flex;align-items:flex-end;">
+          <button class="btn btn-primary" id="acc-btn" onclick="addAccount()">Add Account</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Accounts</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Account</th><th>Balance (₱)</th><th>Actions</th></tr></thead>
+        <tbody id="acc-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSFER -->
+  <div id="fin-transfer" class="fin-panel" style="display:none;">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Transfer Between Accounts</div>
+      <div class="form-row cols-3">
+        <div class="form-group"><label>From Account</label><select id="tf-from"></select></div>
+        <div class="form-group"><label>To Account</label><select id="tf-to"></select></div>
+        <div class="form-group"><label>Amount (₱)</label><input type="number" id="tf-amount" placeholder="0.00" min="0"/></div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group"><label>Note (optional)</label><input type="text" id="tf-note" placeholder="Reason for transfer"/></div>
+      </div>
+      <button class="btn btn-primary" id="tf-btn" onclick="doTransfer()">Transfer</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Transfer History</div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Date & Time</th><th>From</th><th>To</th><th>Amount</th><th>Note</th></tr></thead>
+        <tbody id="tf-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOMERS -->
+<div id="tab-customers" class="tab-panel">
+  <div class="section-header">
+    <h2>Customers</h2>
+    <button class="btn btn-primary" onclick="openModal('modal-add-customer')">+ Add Customer</button>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table><thead><tr><th>Name</th><th>Login Code</th><th>Points</th><th>Actions</th></tr></thead>
+      <tbody id="cust-tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div id="toast"></div>
+
+<!-- MODAL: Product -->
+<div class="modal-overlay" id="modal-add-product">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-product-title">Add Product</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-product')">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Product Name</label><input type="text" id="prod-name" placeholder="e.g. CBD Oil 10ml"/>
+    </div>
+    <div class="form-row cols-3">
+      <div class="form-group"><label>Price (₱)</label><input type="number" id="prod-price" placeholder="0.00" min="0"/></div>
+      <div class="form-group"><label>Quantity</label><input type="number" id="prod-qty" placeholder="0" min="0"/></div>
+      <div class="form-group"><label>Weight</label><input type="text" id="prod-weight" placeholder="e.g. 5g"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-product')">Cancel</button>
+      <button class="btn btn-primary" id="prod-save-btn" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Customer -->
+<div class="modal-overlay" id="modal-add-customer">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Add Customer</h3>
+      <button class="modal-close" onclick="closeModal('modal-add-customer')">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Full Name</label><input type="text" id="new-cust-name" placeholder="Juan dela Cruz"/></div>
+    <div class="form-group" style="margin-bottom:12px;"><label>Starting Points</label><input type="number" id="new-cust-points" placeholder="0" min="0" value="0"/></div>
+    <div style="background:var(--accent-lt);border:1px solid var(--accent);border-radius:var(--radius);padding:12px;text-align:center;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Auto-generated login code</div>
+      <div id="preview-code" style="font-size:28px;font-weight:800;letter-spacing:8px;color:var(--accent);">------</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-customer')">Cancel</button>
+      <button class="btn btn-primary" id="cust-save-btn" onclick="saveCustomer()">Add Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Points -->
+<div class="modal-overlay" id="modal-edit-points">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Edit Points — <span id="ep-name"></span></h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-points')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">Current points: <strong id="ep-current" style="color:var(--text)"></strong></p>
+    <div class="form-row cols-2">
+      <div class="form-group"><label>Action</label>
+        <select id="ep-action">
+          <option value="add">Add points</option>
+          <option value="deduct">Deduct points</option>
+          <option value="set">Set exact value</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Points</label><input type="number" id="ep-value" placeholder="0" min="0"/></div>
+    </div>
+    <div class="form-group"><label>Reason / Note</label><input type="text" id="ep-note" placeholder="e.g. Purchase reward, Redemption"/></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-points')">Cancel</button>
+      <button class="btn btn-primary" id="ep-save-btn" onclick="savePoints()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Order -->
+<div class="modal-overlay" id="modal-edit-order">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Update Order Status</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-order')">×</button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;" id="eo-desc"></p>
+    <div class="form-group"><label>Status</label>
+      <select id="eo-status">
+        <option value="pending">Pending</option>
+        <option value="shipped">Shipped</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-order')">Cancel</button>
+      <button class="btn btn-primary" id="eo-save-btn" onclick="saveOrderStatus()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://gzlervyhpbomdwpfxmes.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6bGVydnlocGJvbWR3cGZ4bWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTg3MjQsImV4cCI6MjA5NzY3NDcyNH0.Pb17-wvn_jbbuhzNUWKmP2_AOLVytJotxVexq4KTfmc';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── AUTH ──
+  const session = JSON.parse(sessionStorage.getItem('hh_admin') || 'null');
+  if (!session) window.location.href = 'admin-login.html';
+  document.getElementById('admin-name').textContent = session?.username || 'admin';
+  function logout() { sessionStorage.removeItem('hh_admin'); window.location.href = 'admin-login.html'; }
+
+  // ── HELPERS ──
+  const fmt = n => '₱' + Number(n).toLocaleString('en-PH', {minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtDate = d => new Date(d).toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const fmtDateOnly = d => new Date(d).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'});
+
+  let toastTimer;
+  function toast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (type === 'error' ? ' error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.className = '', 2800);
+  }
+
+  function openModal(id)  {
+    document.getElementById(id).classList.add('open');
+    if (id === 'modal-add-customer') {
+      document.getElementById('preview-code').textContent = generateCode();
+    }
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  });
+
+  function setBtn(id, loading) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = loading;
+    if (loading) btn.innerHTML = '<div class="spinner"></div>';
+    else btn.innerHTML = btn.dataset.label || btn.innerHTML;
+  }
+
+  // Save original labels
+  document.querySelectorAll('.btn').forEach(b => b.dataset.label = b.innerHTML);
+
+  // ── TABS ──
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+    if (name === 'inventory') loadInventory();
+    if (name === 'finance')   { loadFinance(); }
+    if (name === 'customers') loadCustomers();
+  }
+
+  function switchFinTab(name, el) {
+    document.querySelectorAll('.fin-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.fin-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('fin-' + name).style.display = 'block';
+    el.classList.add('active');
+    if (name === 'sales')    loadFinance();
+    if (name === 'orders')   loadOrders();
+    if (name === 'accounts') loadAccounts();
+    if (name === 'transfer') loadTransfer();
+  }
+
+  // ── INVENTORY ──
+  let editingProductId = null;
+
+  async function loadInventory() {
+    const { data } = await db.from('products').select('*').order('created_at', {ascending:false});
+    const products = data || [];
+    const tbody = document.getElementById('inv-tbody');
+    tbody.innerHTML = '';
+
+    if (!products.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No products yet.</td></tr>';
+    } else {
+      products.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${p.name}</strong></td>
+          <td>${fmt(p.price)}</td>
+          <td><span class="badge ${p.quantity <= 5 ? 'badge-red' : 'badge-green'}">${p.quantity}</span></td>
+          <td class="td-muted">${p.weight || '—'}</td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="editProduct('${p.id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const total = products.reduce((a, p) => a + p.quantity, 0);
+    const low   = products.filter(p => p.quantity <= 5).length;
+    document.getElementById('inv-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Products</div><div class="stat-value">${products.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Stock</div><div class="stat-value green">${total}</div></div>
+      <div class="stat-card"><div class="stat-label">Low Stock (≤5)</div><div class="stat-value ${low ? 'red' : ''}">${low}</div></div>`;
+  }
+
+  function openProductModal() {
+    editingProductId = null;
+    document.getElementById('modal-product-title').textContent = 'Add Product';
+    ['prod-name','prod-price','prod-qty','prod-weight'].forEach(id => document.getElementById(id).value = '');
+    openModal('modal-add-product');
+  }
+
+  async function editProduct(id) {
+    const { data } = await db.from('products').select('*').eq('id', id).single();
+    if (!data) return;
+    editingProductId = id;
+    document.getElementById('modal-product-title').textContent = 'Edit Product';
+    document.getElementById('prod-name').value   = data.name;
+    document.getElementById('prod-price').value  = data.price;
+    document.getElementById('prod-qty').value    = data.quantity;
+    document.getElementById('prod-weight').value = data.weight || '';
+    openModal('modal-add-product');
+  }
+
+  async function saveProduct() {
+    const name     = document.getElementById('prod-name').value.trim();
+    const price    = parseFloat(document.getElementById('prod-price').value);
+    const quantity = parseInt(document.getElementById('prod-qty').value);
+    const weight   = document.getElementById('prod-weight').value.trim();
+    if (!name || isNaN(price) || isNaN(quantity)) { toast('Fill in all required fields.', 'error'); return; }
+
+    setBtn('prod-save-btn', true);
+    if (editingProductId) {
+      await db.from('products').update({name, price, quantity, weight}).eq('id', editingProductId);
+      toast('Product updated.');
+    } else {
+      await db.from('products').insert({name, price, quantity, weight});
+      toast('Product added.');
+    }
+    setBtn('prod-save-btn', false);
+    closeModal('modal-add-product');
+    loadInventory();
+  }
+
+  async function deleteProduct(id) {
+    if (!confirm('Delete this product?')) return;
+    await db.from('products').delete().eq('id', id);
+    toast('Product deleted.');
+    loadInventory();
+  }
+
+  // ── ACCOUNTS ──
+  async function loadAccounts() {
+    const { data } = await db.from('accounts').select('*').order('created_at');
+    const accounts = data || [];
+    const tbody    = document.getElementById('acc-tbody');
+    tbody.innerHTML = '';
+    if (!accounts.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No accounts yet.</td></tr>';
+    } else {
+      accounts.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${a.name}</strong></td>
+          <td style="color:${a.balance >= 0 ? 'var(--accent)' : '#E07060'}">${fmt(a.balance)}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.id}')">Delete</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    await populateAccountDropdowns();
+  }
+
+  async function addAccount() {
+    const name    = document.getElementById('acc-name').value.trim();
+    const balance = parseFloat(document.getElementById('acc-balance').value) || 0;
+    if (!name) { toast('Account name is required.', 'error'); return; }
+    setBtn('acc-btn', true);
+    const { error } = await db.from('accounts').insert({name, balance});
+    setBtn('acc-btn', false);
+    if (error) { toast('Account already exists or error occurred.', 'error'); return; }
+    document.getElementById('acc-name').value = '';
+    document.getElementById('acc-balance').value = '';
+    toast('Account added.');
+    loadAccounts();
+  }
+
+  async function deleteAccount(id) {
+    if (!confirm('Delete this account?')) return;
+    await db.from('accounts').delete().eq('id', id);
+    toast('Account deleted.');
+    loadAccounts();
+  }
+
+  async function populateAccountDropdowns() {
+    const { data } = await db.from('accounts').select('*').order('created_at');
+    const accounts = data || [];
+    const txnSel = document.getElementById('txn-account');
+    if (txnSel) txnSel.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name}</option>`).join('') || '<option value="">No accounts</option>';
+    ['tf-from','tf-to'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) sel.innerHTML = accounts.map(a => `<option value="${a.id}">${a.name} (${fmt(a.balance)})</option>`).join('') || '<option value="">No accounts</option>';
+    });
+  }
+
+  // ── TRANSACTIONS ──
+  async function loadFinance() {
+    await populateAccountDropdowns();
+    const { data: txns }     = await db.from('transactions').select('*, accounts(name)').order('created_at', {ascending:false});
+    const { data: accounts } = await db.from('accounts').select('*');
+    const all      = txns || [];
+    const sales    = all.filter(t => t.type === 'sales').reduce((a,t) => a + Number(t.amount), 0);
+    const expenses = all.filter(t => t.type === 'expense').reduce((a,t) => a + Number(t.amount), 0);
+    const totalBal = (accounts || []).reduce((a, acc) => a + Number(acc.balance), 0);
+
+    document.getElementById('fin-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value green">${fmt(sales)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value red">${fmt(expenses)}</div></div>
+      <div class="stat-card"><div class="stat-label">Net</div><div class="stat-value ${sales-expenses>=0?'green':'red'}">${fmt(sales-expenses)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Balance</div><div class="stat-value yellow">${fmt(totalBal)}</div></div>`;
+
+    const tbody = document.getElementById('txn-tbody');
+    tbody.innerHTML = '';
+    if (!all.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No transactions yet.</td></tr>';
+    } else {
+      all.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="td-muted">${fmtDate(t.created_at)}</td>
+          <td><span class="badge ${t.type==='sales'?'badge-green':'badge-red'}">${t.type==='sales'?'Sale':'Expense'}</span></td>
+          <td>${t.description || '—'}</td>
+          <td class="td-muted">${t.accounts?.name || '—'}</td>
+          <td style="font-weight:600;color:${t.type==='sales'?'var(--accent)':'#E07060'}">${t.type==='sales'?'+':'−'}${fmt(t.amount)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  async function recordTransaction() {
+    const type      = document.getElementById('txn-type').value;
+    const amount    = parseFloat(document.getElementById('txn-amount').value);
+    const accountId = document.getElementById('txn-account').value;
+    const desc      = document.getElementById('txn-desc').value.trim();
+    if (isNaN(amount) || amount <= 0) { toast('Enter a valid amount.', 'error'); return; }
+    if (!accountId) { toast('Add an account first.', 'error'); return; }
+
+    setBtn('txn-btn', true);
+    // Get current account balance
+    const { data: acc } = await db.from('accounts').select('balance').eq('id', accountId).single();
+    const newBalance = type === 'sales'
+      ? Number(acc.balance) + amount
+      : Number(acc.balance) - amount;
+
+    await db.from('accounts').update({balance: newBalance}).eq('id', accountId);
+    await db.from('transactions').insert({type, amount, account_id: accountId, description: desc});
+    setBtn('txn-btn', false);
+    document.getElementById('txn-amount').value = '';
+    document.getElementById('txn-desc').value = '';
+    toast(type === 'sales' ? 'Sale recorded.' : 'Expense recorded.');
+    loadFinance();
+  }
+
+  // ── ORDERS ──
+  let editingOrderId = null;
+
+  async function loadOrders() {
+    const { data } = await db.from('orders').select('*').order('created_at', {ascending:false});
+    const orders   = data || [];
+    const tbody    = document.getElementById('ord-tbody');
+    tbody.innerHTML = '';
+    const statusBadge = s => ({pending:'badge-yellow',shipped:'badge-blue',delivered:'badge-green',cancelled:'badge-red'})[s]||'badge-gray';
+    if (!orders.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No orders yet.</td></tr>';
+    } else {
+      orders.forEach(o => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="td-muted">${fmtDateOnly(o.order_date)}</td>
+          <td>${o.description}</td>
+          <td style="color:var(--accent)">${fmt(o.amount)}</td>
+          <td class="td-muted">${o.tracking_number || '—'}</td>
+          <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
+          <td><button class="btn btn-ghost btn-sm" onclick="openEditOrder('${o.id}','${o.description}','${o.status}')">Update</button></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  async function addOrder() {
+    const date     = document.getElementById('ord-date').value;
+    const tracking = document.getElementById('ord-tracking').value.trim();
+    const status   = document.getElementById('ord-status').value;
+    const desc     = document.getElementById('ord-desc').value.trim();
+    const amount   = parseFloat(document.getElementById('ord-amount').value);
+    if (!date || !desc || isNaN(amount)) { toast('Fill in date, description, and amount.', 'error'); return; }
+    setBtn('ord-btn', true);
+    await db.from('orders').insert({order_date: date, tracking_number: tracking, status, description: desc, amount});
+    setBtn('ord-btn', false);
+    ['ord-date','ord-tracking','ord-desc','ord-amount'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('ord-status').value = 'pending';
+    toast('Order added.');
+    loadOrders();
+  }
+
+  function openEditOrder(id, desc, status) {
+    editingOrderId = id;
+    document.getElementById('eo-desc').textContent = desc;
+    document.getElementById('eo-status').value = status;
+    openModal('modal-edit-order');
+  }
+
+  async function saveOrderStatus() {
+    setBtn('eo-save-btn', true);
+    await db.from('orders').update({status: document.getElementById('eo-status').value}).eq('id', editingOrderId);
+    setBtn('eo-save-btn', false);
+    closeModal('modal-edit-order');
+    toast('Order status updated.');
+    loadOrders();
+  }
+
+  // ── TRANSFERS ──
+  async function loadTransfer() {
+    await populateAccountDropdowns();
+    const { data } = await db.from('transfers').select('*, from:from_account_id(name), to:to_account_id(name)').order('created_at', {ascending:false});
+    const transfers = data || [];
+    const tbody     = document.getElementById('tf-tbody');
+    tbody.innerHTML = '';
+    if (!transfers.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No transfers yet.</td></tr>';
+    } else {
+      transfers.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="td-muted">${fmtDate(t.created_at)}</td>
+          <td>${t.from?.name || '—'}</td>
+          <td>${t.to?.name || '—'}</td>
+          <td style="color:var(--accent)">${fmt(t.amount)}</td>
+          <td class="td-muted">${t.note || '—'}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  async function doTransfer() {
+    const fromId = document.getElementById('tf-from').value;
+    const toId   = document.getElementById('tf-to').value;
+    const amount = parseFloat(document.getElementById('tf-amount').value);
+    const note   = document.getElementById('tf-note').value.trim();
+    if (fromId === toId) { toast('Cannot transfer to the same account.', 'error'); return; }
+    if (isNaN(amount) || amount <= 0) { toast('Enter a valid amount.', 'error'); return; }
+
+    setBtn('tf-btn', true);
+    const { data: from } = await db.from('accounts').select('balance,name').eq('id', fromId).single();
+    const { data: to   } = await db.from('accounts').select('balance,name').eq('id', toId).single();
+    if (Number(from.balance) < amount) { toast(`Insufficient balance in ${from.name}.`, 'error'); setBtn('tf-btn', false); return; }
+
+    await db.from('accounts').update({balance: Number(from.balance) - amount}).eq('id', fromId);
+    await db.from('accounts').update({balance: Number(to.balance) + amount}).eq('id', toId);
+    await db.from('transfers').insert({from_account_id: fromId, to_account_id: toId, amount, note});
+    setBtn('tf-btn', false);
+    document.getElementById('tf-amount').value = '';
+    document.getElementById('tf-note').value = '';
+    toast(`Transferred ${fmt(amount)} from ${from.name} to ${to.name}.`);
+    loadTransfer();
+  }
+
+  // ── CUSTOMERS ──
+  let editingCustomerId = null;
+
+  async function loadCustomers() {
+    const { data } = await db.from('customers').select('*').order('created_at', {ascending:false});
+    const customers = data || [];
+    const tbody     = document.getElementById('cust-tbody');
+    tbody.innerHTML = '';
+    if (!customers.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No customers yet.</td></tr>';
+    } else {
+      customers.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${c.name}</strong></td>
+          <td><span style="font-size:18px;font-weight:800;letter-spacing:4px;color:var(--accent);">${c.code}</span></td>
+          <td><span class="badge badge-green">⭐ ${c.points} pts</span></td>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditPoints('${c.id}','${c.name}',${c.points})">Edit Points</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  }
+
+  function generateCode() {
+    // Generate unique 6-digit code
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  async function getUniqueCode() {
+    let code, exists = true;
+    while (exists) {
+      code = generateCode();
+      const { data } = await db.from('customers').select('id').eq('code', code);
+      exists = data && data.length > 0;
+    }
+    return code;
+  }
+
+  async function saveCustomer() {
+    const name   = document.getElementById('new-cust-name').value.trim();
+    const points = parseInt(document.getElementById('new-cust-points').value) || 0;
+    if (!name) { toast('Please enter the customer name.', 'error'); return; }
+    setBtn('cust-save-btn', true);
+    const code = await getUniqueCode();
+    const { error } = await db.from('customers').insert({name, code, points});
+    setBtn('cust-save-btn', false);
+    if (error) { toast('Error saving customer. Please try again.', 'error'); return; }
+    document.getElementById('new-cust-name').value = '';
+    document.getElementById('new-cust-points').value = '0';
+    document.getElementById('preview-code').textContent = '------';
+    closeModal('modal-add-customer');
+    toast(`Customer added! Code: ${code}`);
+    loadCustomers();
+  }
+
+  async function deleteCustomer(id) {
+    if (!confirm('Delete this customer?')) return;
+    await db.from('customers').delete().eq('id', id);
+    toast('Customer deleted.');
+    loadCustomers();
+  }
+
+  function openEditPoints(id, name, currentPoints) {
+    editingCustomerId = id;
+    document.getElementById('ep-name').textContent    = name;
+    document.getElementById('ep-current').textContent = currentPoints + ' pts';
+    document.getElementById('ep-value').value = '';
+    document.getElementById('ep-note').value  = '';
+    openModal('modal-edit-points');
+  }
+
+  async function savePoints() {
+    const action = document.getElementById('ep-action').value;
+    const value  = parseInt(document.getElementById('ep-value').value);
+    const note   = document.getElementById('ep-note').value.trim();
+    if (isNaN(value) || value < 0) { toast('Enter a valid point value.', 'error'); return; }
+
+    setBtn('ep-save-btn', true);
+    const { data: c } = await db.from('customers').select('points').eq('id', editingCustomerId).single();
+    const before = c.points;
+    let after = before;
+    if (action === 'add')    after = before + value;
+    if (action === 'deduct') after = Math.max(0, before - value);
+    if (action === 'set')    after = value;
+
+    await db.from('customers').update({points: after}).eq('id', editingCustomerId);
+    await db.from('points_log').insert({
+      customer_id: editingCustomerId,
+      action, value,
+      points_before: before,
+      points_after: after,
+      note
+    });
+    setBtn('ep-save-btn', false);
+    closeModal('modal-edit-points');
+    toast(`Points updated: ${before} → ${after}`);
+    loadCustomers();
+  }
+
+  // ── INIT ──
+  loadInventory();
+  document.getElementById('ord-date').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

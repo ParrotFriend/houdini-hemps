@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Houdini Hemps — My Card</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1C1A15;--surface:#252218;--surface2:#2E2B1F;--border:#3D3826;
+  --text:#F0E8D0;--muted:#8C7F60;--accent:#7A9E4A;--accent-dk:#5A7A3A;--accent-lt:#2A3A1A;
+  --radius:10px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.nav-brand{font-size:15px;font-weight:700;color:var(--accent);}
+.nav-user{font-size:13px;color:var(--muted);}
+.logout-btn{font-size:12px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:var(--radius);padding:5px 12px;cursor:pointer;transition:all 0.15s;}
+.logout-btn:hover{color:#E07060;border-color:#E07060;}
+main{flex:1;padding:1.5rem 1rem;max-width:480px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:1.25rem;}
+
+.loyalty-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.75rem 1.5rem;position:relative;overflow:hidden;}
+.loyalty-card::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:var(--accent-lt);opacity:0.6;}
+.loyalty-card::after{content:'';position:absolute;bottom:-60px;left:-20px;width:140px;height:140px;border-radius:50%;background:var(--accent-lt);opacity:0.4;}
+.card-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:0.4rem;position:relative;z-index:1;}
+.card-name{font-size:20px;font-weight:700;color:var(--text);margin-bottom:1.5rem;position:relative;z-index:1;}
+.points-display{display:flex;align-items:flex-end;gap:8px;margin-bottom:1.25rem;position:relative;z-index:1;}
+.points-number{font-size:56px;font-weight:800;line-height:1;color:var(--accent);letter-spacing:-2px;}
+.points-label{font-size:14px;color:var(--muted);margin-bottom:8px;font-weight:500;}
+.stamp-track{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1;}
+.stamp{width:36px;height:36px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--surface2);}
+.stamp.filled{background:var(--accent-lt);border-color:var(--accent);}
+
+.reward-banner{background:var(--accent-lt);border:1.5px solid var(--accent);border-radius:14px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;}
+.reward-banner.hidden{display:none;}
+.reward-icon{font-size:36px;line-height:1;}
+.reward-text h3{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+.reward-text p{font-size:13px;color:var(--muted);}
+
+.progress-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.progress-header span{font-size:13px;color:var(--muted);}
+.progress-header strong{font-size:13px;color:var(--text);}
+.progress-bar-bg{background:var(--surface2);border-radius:99px;height:10px;overflow:hidden;}
+.progress-bar-fill{background:var(--accent);height:100%;border-radius:99px;transition:width 0.6s ease;min-width:4px;}
+.progress-note{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
+
+.history-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.history-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;}
+.history-list{list-style:none;}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:14px 1.25rem;border-bottom:1px solid var(--border);gap:1rem;}
+.history-item:last-child{border-bottom:none;}
+.history-left{display:flex;align-items:center;gap:12px;}
+.history-dot{width:36px;height:36px;border-radius:50%;background:var(--accent-lt);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.history-dot.deduct{background:rgba(192,57,43,0.12);border-color:rgba(192,57,43,0.3);}
+.history-action{font-size:14px;font-weight:500;color:var(--text);}
+.history-date{font-size:12px;color:var(--muted);margin-top:2px;}
+.history-pts{font-size:16px;font-weight:700;color:var(--accent);white-space:nowrap;}
+.history-pts.deduct{color:#E07060;}
+.empty-history{padding:2rem;text-align:center;font-size:13px;color:var(--muted);}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:3rem;gap:10px;color:var(--muted);}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">🌿 Houdini Hemps</div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span class="nav-user" id="nav-user"></span>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
+</nav>
+
+<main>
+  <div class="loading" id="loading"><div class="spinner"></div> Loading your card...</div>
+
+  <div id="content" style="display:none;display:flex;flex-direction:column;gap:1.25rem;">
+    <div class="reward-banner hidden" id="reward-banner">
+      <div class="reward-icon">🎁</div>
+      <div class="reward-text">
+        <h3>You've earned a free item!</h3>
+        <p>Show this to our staff to claim your reward.</p>
+      </div>
+    </div>
+
+    <div class="loyalty-card">
+      <div class="card-label">Loyalty Card</div>
+      <div class="card-name" id="card-name">—</div>
+      <div class="points-display">
+        <div class="points-number" id="points-number">0</div>
+        <div class="points-label">points</div>
+      </div>
+      <div class="stamp-track" id="stamp-track"></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span id="progress-label">Progress to free item</span>
+        <strong id="progress-count"></strong>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-note" id="progress-note"></div>
+    </div>
+
+    <div class="history-card">
+      <div class="history-header">Points History</div>
+      <ul class="history-list" id="history-list"></ul>
+    </div>
+  </div>
+</main>
+
+<script>
+  const SUPABASE_URL = 'https://gzlervyhpbomdwpfxmes.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6bGVydnlocGJvbWR3cGZ4bWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTg3MjQsImV4cCI6MjA5NzY3NDcyNH0.Pb17-wvn_jbbuhzNUWKmP2_AOLVytJotxVexq4KTfmc';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const stored = sessionStorage.getItem('hh_customer');
+  if (!stored) { window.location.href = 'customer-login.html'; }
+  const session = JSON.parse(stored);
+
+  document.getElementById('nav-user').textContent = session.name;
+
+  function logout() {
+    sessionStorage.removeItem('hh_customer');
+    window.location.href = 'customer-login.html';
+  }
+
+  async function loadData() {
+    // Get fresh customer data
+    const { data: customer } = await db
+      .from('customers')
+      .select('*')
+      .eq('id', session.id)
+      .single();
+
+    // Get points history
+    const { data: log } = await db
+      .from('points_log')
+      .select('*')
+      .eq('customer_id', session.id)
+      .order('created_at', { ascending: false });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'flex';
+
+    render(customer, log || []);
+  }
+
+  function render(c, log) {
+    const points = c.points || 0;
+    const GOAL   = 10;
+    const cycle  = points % GOAL;
+    const cyclesCompleted = Math.floor(points / GOAL);
+
+    document.getElementById('card-name').textContent = c.name;
+    document.getElementById('points-number').textContent = points;
+
+    // Reward banner
+    document.getElementById('reward-banner').classList.toggle('hidden', points < GOAL);
+
+    // Stamps
+    const track = document.getElementById('stamp-track');
+    track.innerHTML = '';
+    for (let i = 0; i < GOAL; i++) {
+      const filled = (cycle === 0 && points >= GOAL) ? true : i < cycle;
+      const stamp  = document.createElement('div');
+      stamp.className = 'stamp' + (filled ? ' filled' : '');
+      stamp.textContent = filled ? '🌿' : '';
+      track.appendChild(stamp);
+    }
+
+    // Progress
+    const pct = points >= GOAL ? 100 : (cycle / GOAL) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = cycle + ' / ' + GOAL;
+    if (points >= GOAL) {
+      document.getElementById('progress-label').textContent = '🎉 Reward ready!';
+      document.getElementById('progress-note').textContent =
+        `You've completed ${cyclesCompleted} reward cycle${cyclesCompleted > 1 ? 's' : ''}. Talk to our staff!`;
+    } else {
+      const left = GOAL - cycle;
+      document.getElementById('progress-label').textContent = 'Progress to free item';
+      document.getElementById('progress-note').textContent = left === 1 ? '1 more point to go!' : `${left} more points to go!`;
+    }
+
+    // History
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    if (!log.length) {
+      list.innerHTML = '<li class="empty-history">No points activity yet.<br>Your history will appear here after your first purchase.</li>';
+      return;
+    }
+    const label = { add: 'Points added', deduct: 'Points redeemed', set: 'Points adjusted' };
+    log.forEach(entry => {
+      const isDeduct = entry.action === 'deduct';
+      const date = new Date(entry.created_at).toLocaleDateString('en-PH', {
+        month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const li = document.createElement('li');
+      li.className = 'history-item';
+      li.innerHTML = `
+        <div class="history-left">
+          <div class="history-dot ${isDeduct ? 'deduct' : ''}">${isDeduct ? '↓' : '🌿'}</div>
+          <div>
+            <div class="history-action">${label[entry.action] || 'Updated'}${entry.note ? ' — ' + entry.note : ''}</div>
+            <div class="history-date">${date}</div>
+          </div>
+        </div>
+        <div class="history-pts ${isDeduct ? 'deduct' : ''}">${isDeduct ? '−' : '+'}${entry.value} pts</div>`;
+      list.appendChild(li);
+    });
+  }
+
+  loadData();
+</script>
+</body>
+</html>

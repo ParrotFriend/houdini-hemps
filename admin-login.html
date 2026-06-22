@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Houdini Hemps — Admin Login</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#1C1A15;--surface:#252218;--border:#3D3826;
+  --text:#F0E8D0;--muted:#8C7F60;--accent:#7A9E4A;
+  --accent-dk:#5A7A3A;--danger:#C0392B;--radius:10px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2.5rem 2rem;width:100%;max-width:380px;}
+.brand{text-align:center;margin-bottom:2rem;}
+.logo{width:64px;height:64px;background:#2A3A1A;border:1px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px;}
+.brand h1{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-0.5px;}
+.badge{display:inline-block;margin-top:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:2px 10px;}
+.form-group{margin-bottom:1.1rem;}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;}
+input{width:100%;padding:10px 14px;font-size:15px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;}
+input::placeholder{color:var(--muted);}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(122,158,74,0.12);}
+.btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;margin-top:0.5rem;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn:hover{background:var(--accent-dk);}
+.btn:disabled{opacity:0.6;cursor:not-allowed;}
+.error-msg{display:none;background:rgba(192,57,43,0.15);color:#E07060;border:1px solid rgba(192,57,43,0.3);border-radius:var(--radius);padding:9px 12px;font-size:13px;margin-bottom:1rem;text-align:center;}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0 1rem;}
+.customer-link{display:block;text-align:center;font-size:12px;color:var(--muted);text-decoration:none;}
+.customer-link:hover{color:var(--accent);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <div class="logo">🌿</div>
+    <h1>Houdini Hemps</h1>
+    <span class="badge">Admin Access</span>
+  </div>
+
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="username"/>
+  </div>
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="Enter admin password" autocomplete="current-password"/>
+  </div>
+
+  <button class="btn" id="login-btn" onclick="handleLogin()">Sign in as admin</button>
+
+  <hr class="divider"/>
+  <a class="customer-link" href="customer-login.html">← Back to customer login</a>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://gzlervyhpbomdwpfxmes.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6bGVydnlocGJvbWR3cGZ4bWVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTg3MjQsImV4cCI6MjA5NzY3NDcyNH0.Pb17-wvn_jbbuhzNUWKmP2_AOLVytJotxVexq4KTfmc';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  if (sessionStorage.getItem('hh_admin')) {
+    window.location.href = 'admin-dashboard.html';
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('login-btn');
+    btn.disabled = on;
+    btn.innerHTML = on ? '<div class="spinner"></div> Signing in...' : 'Sign in as admin';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    document.getElementById('error-msg').style.display = 'none';
+
+    if (!username || !password) { showError('Please fill in all fields.'); return; }
+
+    setLoading(true);
+    try {
+      const { data, error } = await db
+        .from('admin')
+        .select('*')
+        .eq('username', username)
+        .eq('password', password)
+        .single();
+
+      if (error || !data) {
+        showError('Invalid username or password.');
+        return;
+      }
+
+      sessionStorage.setItem('hh_admin', JSON.stringify({ username }));
+      window.location.href = 'admin-dashboard.html';
+    } catch (e) {
+      showError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+</script>
+</body>
+</html>
