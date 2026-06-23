@@ -107,6 +107,41 @@ tbody td{padding:10px 14px;color:var(--text);}
 
 .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  nav{padding:0 0.75rem;height:auto;min-height:54px;flex-wrap:wrap;gap:4px;padding-top:6px;padding-bottom:6px;}
+  .nav-brand{font-size:13px;margin-right:0.5rem;}
+  .nav-tabs{order:3;width:100%;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+  .nav-tab{padding:6px 12px;font-size:12px;}
+  .nav-right{margin-left:auto;}
+  .logout-btn{font-size:11px;padding:4px 8px;}
+  #admin-name{display:none;}
+  main{padding:1rem 0.75rem;}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem;}
+  .stat-value{font-size:20px;}
+  .form-row.cols-2,.form-row.cols-3,.form-row.cols-4{grid-template-columns:1fr;}
+  .fin-tabs{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .fin-tab{padding:6px 12px;font-size:12px;white-space:nowrap;}
+  .table-wrap{border:none;}
+  table{display:block;}
+  thead{display:none;}
+  tbody{display:block;width:100%;}
+  tbody tr{display:block;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;padding:10px 12px;}
+  tbody tr:hover{background:var(--surface2);}
+  tbody td{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border:none;font-size:13px;}
+  tbody td::before{content:attr(data-label);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-right:8px;flex-shrink:0;}
+  tbody td:last-child{justify-content:flex-end;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap;}
+  tbody td:last-child::before{display:none;}
+  .empty-row{display:block;}
+  .empty-row td{display:block;text-align:center;border:none;}
+  .empty-row td::before{display:none;}
+  .modal{margin:1rem;max-width:calc(100vw - 2rem);max-height:90vh;overflow-y:auto;}
+  .card{padding:1rem 0.875rem;}
+  .section-header{margin-bottom:0.875rem;}
+  .section-header h2{font-size:15px;}
+  #toast{left:16px;right:16px;bottom:16px;text-align:center;}
+}
 </style>
 </head>
 <body>
@@ -456,11 +491,11 @@ tbody td{padding:10px 14px;color:var(--text);}
       products.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><strong>${p.name}</strong></td>
-          <td>${fmt(p.price)}</td>
-          <td><span class="badge ${p.quantity <= 5 ? 'badge-red' : 'badge-green'}">${p.quantity}</span></td>
-          <td class="td-muted">${p.weight || '—'}</td>
-          <td style="display:flex;gap:6px;">
+          <td data-label="Product"><strong>${p.name}</strong></td>
+          <td data-label="Price">${fmt(p.price)}</td>
+          <td data-label="Stock"><span class="badge ${p.quantity <= 5 ? 'badge-red' : 'badge-green'}">${p.quantity}</span></td>
+          <td data-label="Weight" class="td-muted">${p.weight || '—'}</td>
+          <td>
             <button class="btn btn-ghost btn-sm" onclick="editProduct('${p.id}')">Edit</button>
             <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
           </td>`;
@@ -534,8 +569,8 @@ tbody td{padding:10px 14px;color:var(--text);}
       accounts.forEach(a => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><strong>${a.name}</strong></td>
-          <td style="color:${a.balance >= 0 ? 'var(--accent)' : '#E07060'}">${fmt(a.balance)}</td>
+          <td data-label="Account"><strong>${a.name}</strong></td>
+          <td data-label="Balance" style="color:${a.balance >= 0 ? 'var(--accent)' : '#E07060'}">${fmt(a.balance)}</td>
           <td><button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.id}')">Delete</button></td>`;
         tbody.appendChild(tr);
       });
@@ -599,11 +634,11 @@ tbody td{padding:10px 14px;color:var(--text);}
       all.forEach(t => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="td-muted">${fmtDate(t.created_at)}</td>
-          <td><span class="badge ${t.type==='sales'?'badge-green':'badge-red'}">${t.type==='sales'?'Sale':'Expense'}</span></td>
-          <td>${t.description || '—'}</td>
-          <td class="td-muted">${t.accounts?.name || '—'}</td>
-          <td style="font-weight:600;color:${t.type==='sales'?'var(--accent)':'#E07060'}">${t.type==='sales'?'+':'−'}${fmt(t.amount)}</td>`;
+          <td data-label="Date" class="td-muted">${fmtDate(t.created_at)}</td>
+          <td data-label="Type"><span class="badge ${t.type==='sales'?'badge-green':'badge-red'}">${t.type==='sales'?'Sale':'Expense'}</span></td>
+          <td data-label="Description">${t.description || '—'}</td>
+          <td data-label="Account" class="td-muted">${t.accounts?.name || '—'}</td>
+          <td data-label="Amount" style="font-weight:600;color:${t.type==='sales'?'var(--accent)':'#E07060'}">${t.type==='sales'?'+':'−'}${fmt(t.amount)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -648,11 +683,11 @@ tbody td{padding:10px 14px;color:var(--text);}
       orders.forEach(o => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="td-muted">${fmtDateOnly(o.order_date)}</td>
-          <td>${o.description}</td>
-          <td style="color:var(--accent)">${fmt(o.amount)}</td>
-          <td class="td-muted">${o.tracking_number || '—'}</td>
-          <td><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
+          <td data-label="Date" class="td-muted">${fmtDateOnly(o.order_date)}</td>
+          <td data-label="Description">${o.description}</td>
+          <td data-label="Amount" style="color:var(--accent)">${fmt(o.amount)}</td>
+          <td data-label="Tracking" class="td-muted">${o.tracking_number || '—'}</td>
+          <td data-label="Status"><span class="badge ${statusBadge(o.status)}">${o.status}</span></td>
           <td><button class="btn btn-ghost btn-sm" onclick="openEditOrder('${o.id}','${o.description}','${o.status}')">Update</button></td>`;
         tbody.appendChild(tr);
       });
@@ -704,11 +739,11 @@ tbody td{padding:10px 14px;color:var(--text);}
       transfers.forEach(t => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="td-muted">${fmtDate(t.created_at)}</td>
-          <td>${t.from?.name || '—'}</td>
-          <td>${t.to?.name || '—'}</td>
-          <td style="color:var(--accent)">${fmt(t.amount)}</td>
-          <td class="td-muted">${t.note || '—'}</td>`;
+          <td data-label="Date" class="td-muted">${fmtDate(t.created_at)}</td>
+          <td data-label="From">${t.from?.name || '—'}</td>
+          <td data-label="To">${t.to?.name || '—'}</td>
+          <td data-label="Amount" style="color:var(--accent)">${fmt(t.amount)}</td>
+          <td data-label="Note" class="td-muted">${t.note || '—'}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -751,10 +786,10 @@ tbody td{padding:10px 14px;color:var(--text);}
       customers.forEach(c => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td><strong>${c.name}</strong></td>
-          <td><span style="font-size:18px;font-weight:800;letter-spacing:4px;color:var(--accent);">${c.code}</span></td>
-          <td><span class="badge badge-green">⭐ ${c.points} pts</span></td>
-          <td style="display:flex;gap:6px;">
+          <td data-label="Name"><strong>${c.name}</strong></td>
+          <td data-label="Code"><span style="font-size:18px;font-weight:800;letter-spacing:4px;color:var(--accent);">${c.code}</span></td>
+          <td data-label="Points"><span class="badge badge-green">⭐ ${c.points} pts</span></td>
+          <td>
             <button class="btn btn-ghost btn-sm" onclick="openEditPoints('${c.id}','${c.name}',${c.points})">Edit Points</button>
             <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Delete</button>
           </td>`;
