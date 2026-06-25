@@ -313,17 +313,17 @@ main{flex:1;padding:1.5rem 1rem;max-width:480px;width:100%;margin:0 auto;display
         : p.quantity <= 5
         ? { label: 'Only ' + p.quantity + ' left!', cls: 'low' }
         : { label: 'Available', cls: 'available' };
-      return \`<div class="item-card" style="\${p.quantity === 0 ? 'opacity:0.5' : ''}">
+      return `<div class="item-card" style="\${p.quantity === 0 ? 'opacity:0.5' : ''}">
         <div class="item-emoji">\${getEmoji(p.name)}</div>
         <div class="item-info">
           <div class="item-name">\${p.name}</div>
-          \${p.weight ? \`<div class="item-weight">\${p.weight}</div>\` : ''}
+          \${p.weight ? `<div class="item-weight">\${p.weight}</div>` : ''}
         </div>
         <div class="item-right">
           <div class="item-price">\${price}</div>
           <span class="item-stock \${stock.cls}">\${stock.label}</span>
         </div>
-      </div>\`;
+      </div>`;
     }).join('');
   }
 
