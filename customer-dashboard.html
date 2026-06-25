@@ -306,25 +306,28 @@ main{flex:1;padding:1.5rem 1rem;max-width:480px;width:100%;margin:0 auto;display
       return;
     }
 
-    body.innerHTML = sorted.map(p => {
-      const price = '₱' + Number(p.price).toLocaleString('en-PH', {minimumFractionDigits:2});
-      const stock = p.quantity <= 0
-        ? { label: 'Out of stock', cls: 'out' }
-        : p.quantity <= 5
-        ? { label: 'Only ' + p.quantity + ' left!', cls: 'low' }
-        : { label: 'Available', cls: 'available' };
-      return `<div class="item-card" style="\${p.quantity === 0 ? 'opacity:0.5' : ''}">
-        <div class="item-emoji">\${getEmoji(p.name)}</div>
-        <div class="item-info">
-          <div class="item-name">\${p.name}</div>
-          \${p.weight ? `<div class="item-weight">\${p.weight}</div>` : ''}
-        </div>
-        <div class="item-right">
-          <div class="item-price">\${price}</div>
-          <span class="item-stock \${stock.cls}">\${stock.label}</span>
-        </div>
-      </div>`;
-    }).join('');
+    var html = '';
+    sorted.forEach(function(p) {
+      var price = '₱' + Number(p.price).toLocaleString('en-PH', {minimumFractionDigits:2});
+      var stockLabel, stockCls;
+      if (p.quantity <= 0)     { stockLabel = 'Out of stock'; stockCls = 'out'; }
+      else if (p.quantity <= 5){ stockLabel = 'Only ' + p.quantity + ' left!'; stockCls = 'low'; }
+      else                     { stockLabel = 'Available'; stockCls = 'available'; }
+      var opacity = p.quantity === 0 ? 'opacity:0.5' : '';
+      var weightHtml = p.weight ? '<div class="item-weight">' + p.weight + '</div>' : '';
+      html += '<div class="item-card" style="' + opacity + '">'
+            + '<div class="item-emoji">' + getEmoji(p.name) + '</div>'
+            + '<div class="item-info">'
+            + '<div class="item-name">' + p.name + '</div>'
+            + weightHtml
+            + '</div>'
+            + '<div class="item-right">'
+            + '<div class="item-price">' + price + '</div>'
+            + '<span class="item-stock ' + stockCls + '">' + stockLabel + '</span>'
+            + '</div>'
+            + '</div>';
+    });
+    body.innerHTML = html;
   }
 
   function closeItemsModal() {
